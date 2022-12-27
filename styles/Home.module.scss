@@ -32,3 +32,22 @@
 .hr {
   margin: 10px 0;
 }
+
+.buttons {
+  margin-top: 20px;
+}
+
+.startButton {
+  padding: 10px 20px;
+  color: black;
+  background: white;
+  border: 1px solid white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.startButton:hover {
+  background: black;
+  color: white;
+}

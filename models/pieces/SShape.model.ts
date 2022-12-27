@@ -1,13 +1,13 @@
 import {Piece} from "./Piece.model";
 import {cellPerRow} from "../../config/dimensions";
 
-class Square extends Piece {
+class SShape extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#FBDA61', 'square');
-        this.shape = [1, cellPerRow, cellPerRow + 1];
+        super('#FBAB7E', 'sshape');
+        this.shape = [-cellPerRow, -cellPerRow + 1, -1];
     }
 }
 
-export default Square;
+export default SShape;

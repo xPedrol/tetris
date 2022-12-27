@@ -1,13 +1,13 @@
 import {Piece} from "./Piece.model";
 import {cellPerRow} from "../../config/dimensions";
 
-class Square extends Piece {
+class JShape extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#FBDA61', 'square');
-        this.shape = [1, cellPerRow, cellPerRow + 1];
+        super('#92fcc2', 'jshape');
+        this.shape = [cellPerRow, cellPerRow * 2, cellPerRow * 2 - 1];
     }
 }
 
-export default Square;
+export default JShape;

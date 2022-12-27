@@ -1,13 +1,13 @@
 import {Piece} from "./Piece.model";
 import {cellPerRow} from "../../config/dimensions";
 
-class Square extends Piece {
+class Bar extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#FBDA61', 'square');
-        this.shape = [1, cellPerRow, cellPerRow + 1];
+        super('aqua', 'bar');
+        this.shape = [cellPerRow, cellPerRow * 2, cellPerRow * 3, cellPerRow * 4];
     }
 }
 
-export default Square;
+export default Bar;
