@@ -37,36 +37,61 @@ export default function Home() {
     const toggleGameSate = () => {
         setPause(!pause);
     };
+
+    const movePiece = (direction: KeyboardEvent['key']) => {
+        const piece = currentPiece.current;
+        if (piece) {
+            const prevIndex = piece.index;
+            const move = (left: boolean) => {
+                if (left) piece.index--;
+                else piece.index++;
+            };
+            switch (direction) {
+                case 'ArrowLeft':
+                    move(true);
+                    break;
+                case 'ArrowRight':
+                    move(false);
+                    break;
+            }
+            const auxBoard = [...board];
+            setBoard(drawShape(auxBoard, prevIndex));
+            auxBoard[piece.index] = piece;
+            setBoard(drawShape(auxBoard, prevIndex, piece.color));
+            // clearTimeout(timeoutId.current);
+        }
+    };
+    const drawShape = (auxBoard: (TBoardCell | null)[], prevIndex: number, input: any = null) => {
+        const piece = currentPiece.current as Piece;
+        input = input ?? 'transparent';
+        let index = input === 'transparent' ? prevIndex : piece.index;
+        for (let i = 0; i < piece.shape.length; i++) {
+            let iShape = auxBoard[index + piece.shape[i]];
+            if (!iShape) {
+                iShape = new BoardCell();
+            }
+            if (input !== 'transparent') {
+                iShape.id = piece.id;
+            } else {
+                iShape.id = null;
+            }
+            iShape.color = input;
+            auxBoard[index + piece.shape[i]] = iShape;
+        }
+        return auxBoard;
+    };
     const draw = (piece: Piece) => {
-        const auxBoard = [...board];
         const prevIndex = piece.index;
         if (piece.index === 0) {
             piece.index = 4;
         } else {
             piece.index += cellPerRow;
         }
-        const drawShape = (input: any = null) => {
-            input = input ?? 'transparent';
-            let index = input === 'transparent' ? prevIndex : piece.index;
-            for (let i = 0; i < piece.shape.length; i++) {
-                let iShape = auxBoard[index + piece.shape[i]];
-                if (!iShape) {
-                    iShape = new BoardCell();
-                }
-                if (input !== 'transparent') {
-                    iShape.id = piece.id;
-                } else {
-                    iShape.id = null;
-                }
-                iShape.color = input;
-                auxBoard[index + piece.shape[i]] = iShape;
-            }
-        };
+        const auxBoard = [...board];
         auxBoard[prevIndex] = new BoardCell(defaultCell);
-        drawShape();
+        drawShape(auxBoard, prevIndex);
         auxBoard[piece.index] = piece;
-        drawShape(piece.color);
-        setBoard(auxBoard);
+        setBoard(drawShape(auxBoard, prevIndex, piece.color));
     };
 
     const generatePiece = () => {
@@ -89,19 +114,15 @@ export default function Home() {
         }
     };
     const verifyCollision = (): boolean => {
-        // console.log(board);
         const piece = currentPiece.current as Piece;
         let collision = false;
         if (piece.index + cellPerRow > cellDimensions.totalCells) return true;
         const nextIndex = piece.index + cellPerRow;
         const aShape = board[nextIndex];
-        console.log(aShape, piece);
-        // @ts-ignore
         if (aShape && typeof aShape.id === 'number' && aShape.id >= 0 && aShape.id !== piece.id) return true;
         for (let i = 0; i < piece.shape.length; i++) {
             const iShapeIndex = piece.index + piece.shape[i] + cellPerRow;
             const iShape = board[iShapeIndex];
-            // @ts-ignore
             if (iShape && typeof iShape.id === 'number' && iShape.id >= 0 && iShape.id !== piece.id || (iShapeIndex > cellDimensions.totalCells)) {
                 collision = true;
                 break;
@@ -110,6 +131,25 @@ export default function Home() {
         return collision;
     };
 
+    useEffect(() => {
+        const keyDownHandler = (e: KeyboardEvent) => {
+            console.log(e);
+            switch (e.key) {
+                case 'ArrowLeft':
+                    movePiece(e.key);
+                    break;
+                case 'ArrowRight':
+                    movePiece(e.key);
+                    break;
+            }
+        };
+        document.addEventListener("keydown", keyDownHandler);
+        // clean up
+        return () => {
+            document.removeEventListener("keydown", keyDownHandler);
+        };
+    }, []);
+
 
     useEffect(() => {
         if (!pause) {
@@ -117,7 +157,6 @@ export default function Home() {
             if (currentPiece.current) {
                 draw(currentPiece.current);
             }
-
         }
     }, [turn]);
     useEffect(() => {
@@ -127,9 +166,10 @@ export default function Home() {
                 setTurn(turn + 1);
                 clearTimeout(timeoutId.current);
             } else {
+                console.log('drawing');
                 timeoutId.current = setTimeout(() => {
                     draw(currentPiece.current as Piece);
-                }, 500);
+                }, 1000);
             }
         } else {
             clearTimeout(timeoutId.current);
@@ -137,6 +177,7 @@ export default function Home() {
         if (!currentPiece.current && !pause) {
             setTurn(turn + 1);
         }
+        console.log(timeoutId);
     }, [board, pause]);
     return (
         <>
