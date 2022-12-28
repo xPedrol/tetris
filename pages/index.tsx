@@ -104,7 +104,7 @@ export default function Home() {
             const iShapeIndex = index + piece.shape[i];
             if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
                 let iShape = board.current[iShapeIndex];
-                if (iShape instanceof BoardCell || !iShape) {
+                if (!iShape) {
                     iShape = new BoardCell();
                 }
                 if (input !== 'transparent') {
@@ -136,7 +136,7 @@ export default function Home() {
 
     const generatePiece = () => {
         let sortedPiece = Math.floor(Math.random() * 7);
-        sortedPiece = 6;
+        // sortedPiece = 6;
         switch (sortedPiece) {
             case 0:
                 return new Tee();
@@ -275,8 +275,7 @@ export default function Home() {
                          style={{width: gridDimensions.width, height: gridDimensions.height}}>
                         {
                             Array.from(Array(cellDimensions.totalCells).keys()).map((index) => {
-                                return <Cell key={index}
-                                             piece={board.current[index]}
+                                return <Cell piece={board.current[index]} key={index}
                                              width={cellDimensions.width}
                                              height={cellDimensions.height}/>;
                             })

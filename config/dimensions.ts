@@ -3,7 +3,7 @@ import TCellDimension from "../models/cellDimension.model";
 
 export const cellPerRow = 10;
 export const getGridDimensions = (): TGridDimension => {
-    const width = 400;
+    const width = 350;
     const height = width * 1.7;
     return {
         width,
