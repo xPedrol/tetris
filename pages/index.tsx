@@ -104,7 +104,7 @@ export default function Home() {
             const iShapeIndex = index + piece.shape[i];
             if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
                 let iShape = board.current[iShapeIndex];
-                if (!iShape) {
+                if (iShape instanceof BoardCell || !iShape) {
                     iShape = new BoardCell();
                 }
                 if (input !== 'transparent') {
@@ -275,7 +275,8 @@ export default function Home() {
                          style={{width: gridDimensions.width, height: gridDimensions.height}}>
                         {
                             Array.from(Array(cellDimensions.totalCells).keys()).map((index) => {
-                                return <Cell color={board.current[index]?.color} key={index}
+                                return <Cell key={index}
+                                             piece={board.current[index]}
                                              width={cellDimensions.width}
                                              height={cellDimensions.height}/>;
                             })

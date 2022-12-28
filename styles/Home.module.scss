@@ -64,9 +64,14 @@
   background: #000;
   margin-bottom: 10px;
 }
-.score{
+
+.score {
   background: aliceblue;
   color: black;
   padding: 2.5px 5px;
   border-radius: 5px;
+}
+
+.cellBorder {
+  border: 1px solid white !important;
 }

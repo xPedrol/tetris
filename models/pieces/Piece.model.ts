@@ -3,7 +3,7 @@ export abstract class Piece {
     name: string;
     index: number;
     id: number;
-
+    border: string;
     static ID = 0;
     abstract shape: Array<number>;
 
@@ -14,10 +14,11 @@ export abstract class Piece {
         this.index = 0;
         this.id = Piece.ID++;
         this.rotate();
+        this.border = '1px solid white';
     }
 
     public rotate() {
-        if(this.shape) {
+        if (this.shape) {
             this.index = (this.index + 1) % this.shape.length;
         }
     }

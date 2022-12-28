@@ -6,6 +6,7 @@ export type TBoardCell = {
 export class BoardCell implements TBoardCell {
     id: number | null;
     color: string;
+    border: any;
 
     constructor(data: any = {}) {
         this.id = data.id ?? null;
