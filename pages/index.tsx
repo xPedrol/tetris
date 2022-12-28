@@ -1,11 +1,11 @@
 import Head from 'next/head';
-import {Inter, Poppins, Roboto} from '@next/font/google';
+import {Poppins, Roboto} from '@next/font/google';
 import styles from '../styles/Home.module.scss';
 import Cell from "../components/Cell";
 import {cellPerRow, getCellDimensions, getGridDimensions} from "../config/dimensions";
 import Square from "../models/pieces/Square.model";
 import {Piece} from "../models/pieces/Piece.model";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import Tee from "../models/pieces/Tee.model";
 import ZShape from "../models/pieces/ZShape.model";
 import SShape from "../models/pieces/SShape.model";
@@ -14,7 +14,6 @@ import JShape from "../models/pieces/JShape.model";
 import Bar from "../models/pieces/Bar.model";
 import {BoardCell, TBoardCell} from "../models/BoardCell.model";
 
-const inter = Inter({subsets: ['latin']});
 const defaultCell = new BoardCell({id: null, color: 'transparent'});
 const cellDimensions = getCellDimensions();
 const gridDimensions = getGridDimensions();
@@ -29,11 +28,22 @@ const roboto = Roboto({
 
 export default function Home() {
     const currentPiece = useRef<Piece | null>(null);
+    const [drawBoard, setDrawBoard] = useState<number>(0);
+    const [drawMove, setDrawMove] = useState<number>(0);
+    const keyDownHandler = useCallback((e: KeyboardEvent) => {
+        switch (e.key) {
+            case 'ArrowLeft':
+                movePiece(e.key);
+                break;
+            case 'ArrowRight':
+                movePiece(e.key);
+                break;
+        }
+    },[drawMove])
     const timeoutId = useRef<any | null>(null);
-    const [board, setBoard] = useState<(TBoardCell | null)[]>([]);
+    const board = useRef<(TBoardCell | null)[]>([]);
     const [pause, setPause] = useState<boolean>(true);
     const [turn, setTurn] = useState<number>(0);
-    board.length = cellDimensions.totalCells;
     const toggleGameSate = () => {
         setPause(!pause);
     };
@@ -54,19 +64,21 @@ export default function Home() {
                     move(false);
                     break;
             }
-            const auxBoard = [...board];
-            setBoard(drawShape(auxBoard, prevIndex));
-            auxBoard[piece.index] = piece;
-            setBoard(drawShape(auxBoard, prevIndex, piece.color));
+            board.current[prevIndex] = new BoardCell(defaultCell);
+            drawShape(prevIndex);
+            board.current[piece.index] = piece;
+            console.log('move',piece.index);
+            drawShape(prevIndex, piece.color);
+            setDrawMove(drawMove + 1);
             // clearTimeout(timeoutId.current);
         }
     };
-    const drawShape = (auxBoard: (TBoardCell | null)[], prevIndex: number, input: any = null) => {
+    const drawShape = (prevIndex: number, input: any = null) => {
         const piece = currentPiece.current as Piece;
         input = input ?? 'transparent';
         let index = input === 'transparent' ? prevIndex : piece.index;
         for (let i = 0; i < piece.shape.length; i++) {
-            let iShape = auxBoard[index + piece.shape[i]];
+            let iShape = board.current[index + piece.shape[i]];
             if (!iShape) {
                 iShape = new BoardCell();
             }
@@ -76,22 +88,25 @@ export default function Home() {
                 iShape.id = null;
             }
             iShape.color = input;
-            auxBoard[index + piece.shape[i]] = iShape;
+            board.current[index + piece.shape[i]] = iShape;
         }
-        return auxBoard;
     };
-    const draw = (piece: Piece) => {
-        const prevIndex = piece.index;
-        if (piece.index === 0) {
-            piece.index = 4;
-        } else {
-            piece.index += cellPerRow;
+    const draw = () => {
+        if (currentPiece.current) {
+            console.log('draw',currentPiece.current.index);
+            const piece = currentPiece.current as Piece;
+            const prevIndex = piece.index;
+            if (piece.index === 0) {
+                piece.index = 4;
+            } else {
+                piece.index += cellPerRow;
+            }
+            board.current[prevIndex] = new BoardCell(defaultCell);
+            drawShape(prevIndex);
+            board.current[piece.index] = piece;
+            drawShape(prevIndex, piece.color);
+            setDrawBoard(drawBoard + 1);
         }
-        const auxBoard = [...board];
-        auxBoard[prevIndex] = new BoardCell(defaultCell);
-        drawShape(auxBoard, prevIndex);
-        auxBoard[piece.index] = piece;
-        setBoard(drawShape(auxBoard, prevIndex, piece.color));
     };
 
     const generatePiece = () => {
@@ -118,11 +133,11 @@ export default function Home() {
         let collision = false;
         if (piece.index + cellPerRow > cellDimensions.totalCells) return true;
         const nextIndex = piece.index + cellPerRow;
-        const aShape = board[nextIndex];
+        const aShape = board.current[nextIndex];
         if (aShape && typeof aShape.id === 'number' && aShape.id >= 0 && aShape.id !== piece.id) return true;
         for (let i = 0; i < piece.shape.length; i++) {
             const iShapeIndex = piece.index + piece.shape[i] + cellPerRow;
-            const iShape = board[iShapeIndex];
+            const iShape = board.current[iShapeIndex];
             if (iShape && typeof iShape.id === 'number' && iShape.id >= 0 && iShape.id !== piece.id || (iShapeIndex > cellDimensions.totalCells)) {
                 collision = true;
                 break;
@@ -130,33 +145,22 @@ export default function Home() {
         }
         return collision;
     };
-
     useEffect(() => {
-        const keyDownHandler = (e: KeyboardEvent) => {
-            console.log(e);
-            switch (e.key) {
-                case 'ArrowLeft':
-                    movePiece(e.key);
-                    break;
-                case 'ArrowRight':
-                    movePiece(e.key);
-                    break;
-            }
-        };
+        board.current.length = cellDimensions.totalCells;
+    }, []);
+    useEffect(() => {
         document.addEventListener("keydown", keyDownHandler);
         // clean up
         return () => {
             document.removeEventListener("keydown", keyDownHandler);
         };
-    }, []);
+    }, [keyDownHandler]);
 
 
     useEffect(() => {
         if (!pause) {
             currentPiece.current = generatePiece() ?? null;
-            if (currentPiece.current) {
-                draw(currentPiece.current);
-            }
+            draw();
         }
     }, [turn]);
     useEffect(() => {
@@ -168,8 +172,8 @@ export default function Home() {
             } else {
                 console.log('drawing');
                 timeoutId.current = setTimeout(() => {
-                    draw(currentPiece.current as Piece);
-                }, 1000);
+                    draw();
+                }, 600);
             }
         } else {
             clearTimeout(timeoutId.current);
@@ -177,8 +181,7 @@ export default function Home() {
         if (!currentPiece.current && !pause) {
             setTurn(turn + 1);
         }
-        console.log(timeoutId);
-    }, [board, pause]);
+    }, [drawBoard, pause]);
     return (
         <>
             <Head>
@@ -188,13 +191,15 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico"/>
             </Head>
             <main className={styles.main}>
+                {drawMove}
                 <h1 className={`${poppins800.className} ${styles.pageTitle}`}>Tetris</h1>
                 <div className={styles.tetrisContainer}>
                     <div className={styles.tetrisGame}
                          style={{width: gridDimensions.width, height: gridDimensions.height}}>
                         {
                             Array.from(Array(cellDimensions.totalCells).keys()).map((index) => {
-                                return <Cell color={board[index]?.color} key={index} width={cellDimensions.width}
+                                return <Cell color={board.current[index]?.color} key={index}
+                                             width={cellDimensions.width}
                                              height={cellDimensions.height}/>;
                             })
                         }
