@@ -2,7 +2,7 @@ import Head from 'next/head';
 import {Poppins, Roboto} from '@next/font/google';
 import styles from '../styles/Home.module.scss';
 import Cell from "../components/Cell";
-import {cellPerRow, getCellDimensions, getGridDimensions} from "../config/dimensions";
+import {cellPerColumn, cellPerRow, getCellDimensions, getGridDimensions} from "../config/dimensions";
 import Square from "../models/pieces/Square.model";
 import {Piece} from "../models/pieces/Piece.model";
 import {useCallback, useEffect, useRef, useState} from "react";
@@ -17,25 +17,30 @@ import {BoardCell, TBoardCell} from "../models/BoardCell.model";
 const defaultCell = new BoardCell({id: null, color: 'transparent'});
 const cellDimensions = getCellDimensions();
 const gridDimensions = getGridDimensions();
-const poppins800 = Poppins({
+const poppins = Poppins({
     subsets: ['latin'],
-    weight: '800'
+    weight: ['800']
 });
 const roboto = Roboto({
     subsets: ['latin'],
-    weight: '500'
+    weight: ['500', '700']
 });
+
 
 export default function Home() {
     const currentPiece = useRef<Piece | null>(null);
     const [drawBoard, setDrawBoard] = useState<number>(0);
     const [drawMove, setDrawMove] = useState<number>(0);
+    const [score, setScore] = useState<number>(0);
     const keyDownHandler = useCallback((e: KeyboardEvent) => {
         switch (e.key) {
             case 'ArrowLeft':
                 movePiece(e.key);
                 break;
             case 'ArrowRight':
+                movePiece(e.key);
+                break;
+            case 'ArrowDown':
                 movePiece(e.key);
                 break;
         }
@@ -48,6 +53,15 @@ export default function Home() {
         setPause(!pause);
     };
 
+    const restartGame = () => {
+        board.current = [];
+        setScore(0);
+        setTurn(0);
+        setPause(true);
+        setDrawMove(0);
+        setDrawBoard(0);
+        currentPiece.current = null;
+    };
     const movePiece = (direction: KeyboardEvent['key']) => {
         const piece = currentPiece.current;
         if (piece) {
@@ -70,11 +84,14 @@ export default function Home() {
                 case 'ArrowRight':
                     move(false);
                     break;
+                case 'ArrowDown':
+                    if (!verifyCollision()) {
+                        piece.index += cellPerRow;
+                    }
             }
             board.current[prevIndex] = new BoardCell(defaultCell);
             drawShape(prevIndex);
             board.current[piece.index] = piece;
-            console.log('move', piece.index);
             drawShape(prevIndex, piece.color);
             setDrawMove(drawMove + 1);
             // clearTimeout(timeoutId.current);
@@ -100,7 +117,6 @@ export default function Home() {
     };
     const draw = () => {
         if (currentPiece.current) {
-            console.log('draw', currentPiece.current.index);
             const piece = currentPiece.current as Piece;
             const prevIndex = piece.index;
             if (piece.index === 0) {
@@ -118,6 +134,7 @@ export default function Home() {
 
     const generatePiece = () => {
         const sortedPiece = Math.floor(Math.random() * 7);
+        console.log(sortedPiece);
         switch (sortedPiece) {
             case 0:
                 return new Tee();
@@ -157,8 +174,12 @@ export default function Home() {
         const hasCollision = (index: number) => {
             if (direction === 'left') {
                 if (index % cellPerRow === 0) return true;
+                const iShape = board.current[index - 1];
+                if (iShape && typeof iShape.id === 'number' && iShape.id !== piece.id) return true;
             } else if (direction === 'right') {
                 if ((index + 1) % cellPerRow === 0) return true;
+                const iShape = board.current[index + 1];
+                if (iShape && typeof iShape.id === 'number' && iShape.id !== piece.id) return true;
             }
             return false;
         };
@@ -168,6 +189,28 @@ export default function Home() {
             if (hasCollision(iShapeIndex)) return true;
         }
         return false;
+    };
+    const verifyLine = () => {
+        let line = 0;
+        while (line < cellPerColumn) {
+            for (let i = 0; i < cellPerRow; i++) {
+                const iShape = board.current[line * cellPerRow + i];
+                // console.log(line * cellPerRow + i, iShape);
+                if (!iShape || (iShape && iShape.id === null)) break;
+                if (i === 9) {
+                    console.log('ai');
+                    for (let j = 0; j < cellPerRow; j++) {
+                        board.current[line * cellPerRow + j] = defaultCell;
+                    }
+                    console.log(line * cellPerRow);
+                    for (let j = line * cellPerRow; j > 0; j--) {
+                        board.current[j] = board.current[j - cellPerRow];
+                    }
+                    setScore(score + 1);
+                }
+            }
+            line++;
+        }
     };
     useEffect(() => {
         board.current.length = cellDimensions.totalCells;
@@ -189,16 +232,16 @@ export default function Home() {
     }, [turn]);
     useEffect(() => {
         if (!pause && currentPiece.current) {
-            const hasCollision = verifyCollision();
-            if (hasCollision) {
-                setTurn(turn + 1);
-                clearTimeout(timeoutId.current);
-            } else {
-                console.log('drawing');
-                timeoutId.current = setTimeout(() => {
+            timeoutId.current = setTimeout(() => {
+                const hasCollision = verifyCollision();
+                if (hasCollision) {
+                    verifyLine();
+                    setTurn(turn + 1);
+                    clearTimeout(timeoutId.current);
+                } else {
                     draw();
-                }, 600);
-            }
+                }
+            }, 600);
         } else {
             clearTimeout(timeoutId.current);
         }
@@ -215,8 +258,12 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico"/>
             </Head>
             <main className={styles.main}>
-                {drawMove}
-                <h1 className={`${poppins800.className} ${styles.pageTitle}`}>Tetris</h1>
+                <h1 className={`${poppins.className} ${styles.pageTitle}`}>Tetris</h1>
+                <div className={styles.status}>
+                    <div className={styles.score}>
+                        <p className={roboto.className}>Score: {score}</p>
+                    </div>
+                </div>
                 <div className={styles.tetrisContainer}>
                     <div className={styles.tetrisGame}
                          style={{width: gridDimensions.width, height: gridDimensions.height}}>
@@ -229,13 +276,15 @@ export default function Home() {
                         }
                     </div>
                     <div className={styles.buttons}>
-                        {
-                            <button className={`${roboto.className} ${styles.startButton}`}
-                                    onClick={() => toggleGameSate()}>
-                                {pause ? 'Start' : 'Pause'}
-                            </button>
+                        <button className={`${roboto.className} ${styles.startButton}`}
+                                onClick={() => toggleGameSate()}>
+                            {pause ? (board.current.length === 0)?'Start':'Resume' : 'Pause'}
+                        </button>
+                        <button className={`${roboto.className} ${styles.startButton}`}
+                                onClick={() => restartGame()}>
+                            Restart
+                        </button>
 
-                        }
                     </div>
                 </div>
             </main>

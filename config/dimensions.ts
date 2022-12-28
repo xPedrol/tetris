@@ -10,11 +10,12 @@ export const getGridDimensions = (): TGridDimension => {
         height
     };
 };
+export const cellPerColumn = cellPerRow * getGridDimensions().height / getGridDimensions().width;
 export const getCellDimensions = (): TCellDimension => {
     const gridDimensions = getGridDimensions();
     const width = gridDimensions.width / cellPerRow;
     const height = gridDimensions.width / cellPerRow;
-    const totalCells = cellPerRow * cellPerRow * gridDimensions.height / gridDimensions.width;
+    const totalCells = cellPerRow * cellPerColumn;
     return {
         width,
         height,
