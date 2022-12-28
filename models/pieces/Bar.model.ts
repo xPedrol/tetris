@@ -6,7 +6,7 @@ class Bar extends Piece {
 
     constructor() {
         super('aqua', 'bar');
-        this.shape = [cellPerRow, cellPerRow * 2, cellPerRow * 3, cellPerRow * 4];
+        this.shape = [-cellPerRow * 2, -cellPerRow, cellPerRow, cellPerRow * 2];
     }
 }
 

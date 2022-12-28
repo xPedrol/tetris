@@ -14,7 +14,6 @@ import JShape from "../models/pieces/JShape.model";
 import Bar from "../models/pieces/Bar.model";
 import {BoardCell, TBoardCell} from "../models/BoardCell.model";
 
-const defaultCell = new BoardCell({id: null, color: 'transparent'});
 const cellDimensions = getCellDimensions();
 const gridDimensions = getGridDimensions();
 const poppins = Poppins({
@@ -31,7 +30,7 @@ export default function Home() {
     const currentPiece = useRef<Piece | null>(null);
     const [drawBoard, setDrawBoard] = useState<number>(0);
     const [drawMove, setDrawMove] = useState<number>(0);
-    const [score, setScore] = useState<number>(0);
+    const [lines, setLines] = useState<number>(0);
     const keyDownHandler = useCallback((e: KeyboardEvent) => {
         switch (e.key) {
             case 'ArrowLeft':
@@ -55,7 +54,7 @@ export default function Home() {
 
     const restartGame = () => {
         board.current = [];
-        setScore(0);
+        setLines(0);
         setTurn(0);
         setPause(true);
         setDrawMove(0);
@@ -68,11 +67,11 @@ export default function Home() {
             const prevIndex = piece.index;
             const move = (left: boolean) => {
                 if (left) {
-                    if (!verifyLineCollision('left')) {
+                    if (!verifyRowCollision('left')) {
                         piece.index--;
                     }
                 } else {
-                    if (!verifyLineCollision('right')) {
+                    if (!verifyRowCollision('right')) {
                         piece.index++;
                     }
                 }
@@ -85,11 +84,11 @@ export default function Home() {
                     move(false);
                     break;
                 case 'ArrowDown':
-                    if (!verifyCollision()) {
+                    if (!verifyColCollision()) {
                         piece.index += cellPerRow;
                     }
             }
-            board.current[prevIndex] = new BoardCell(defaultCell);
+            board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
             drawShape(prevIndex);
             board.current[piece.index] = piece;
             drawShape(prevIndex, piece.color);
@@ -102,17 +101,20 @@ export default function Home() {
         input = input ?? 'transparent';
         let index = input === 'transparent' ? prevIndex : piece.index;
         for (let i = 0; i < piece.shape.length; i++) {
-            let iShape = board.current[index + piece.shape[i]];
-            if (!iShape) {
-                iShape = new BoardCell();
+            const iShapeIndex = index + piece.shape[i];
+            if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
+                let iShape = board.current[iShapeIndex];
+                if (!iShape) {
+                    iShape = new BoardCell();
+                }
+                if (input !== 'transparent') {
+                    iShape.id = piece.id;
+                } else {
+                    iShape.id = null;
+                }
+                iShape.color = input;
+                board.current[iShapeIndex] = iShape;
             }
-            if (input !== 'transparent') {
-                iShape.id = piece.id;
-            } else {
-                iShape.id = null;
-            }
-            iShape.color = input;
-            board.current[index + piece.shape[i]] = iShape;
         }
     };
     const draw = () => {
@@ -124,7 +126,7 @@ export default function Home() {
             } else {
                 piece.index += cellPerRow;
             }
-            board.current[prevIndex] = new BoardCell(defaultCell);
+            board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
             drawShape(prevIndex);
             board.current[piece.index] = piece;
             drawShape(prevIndex, piece.color);
@@ -133,8 +135,8 @@ export default function Home() {
     };
 
     const generatePiece = () => {
-        const sortedPiece = Math.floor(Math.random() * 7);
-        console.log(sortedPiece);
+        let sortedPiece = Math.floor(Math.random() * 7);
+        sortedPiece = 6;
         switch (sortedPiece) {
             case 0:
                 return new Tee();
@@ -152,7 +154,7 @@ export default function Home() {
                 return new Bar();
         }
     };
-    const verifyCollision = (): boolean => {
+    const verifyColCollision = (): boolean => {
         const piece = currentPiece.current as Piece;
         let collision = false;
         if (piece.index + cellPerRow > cellDimensions.totalCells) return true;
@@ -162,14 +164,14 @@ export default function Home() {
         for (let i = 0; i < piece.shape.length; i++) {
             const iShapeIndex = piece.index + piece.shape[i] + cellPerRow;
             const iShape = board.current[iShapeIndex];
-            if (iShape && typeof iShape.id === 'number' && iShape.id >= 0 && iShape.id !== piece.id || (iShapeIndex > cellDimensions.totalCells)) {
+            if (iShape && typeof iShape.id === 'number' && iShape.id >= 0 && iShape.id !== piece.id || (iShapeIndex >= cellDimensions.totalCells)) {
                 collision = true;
                 break;
             }
         }
         return collision;
     };
-    const verifyLineCollision = (direction: 'left' | 'right'): boolean => {
+    const verifyRowCollision = (direction: 'left' | 'right'): boolean => {
         const piece = currentPiece.current as Piece;
         const hasCollision = (index: number) => {
             if (direction === 'left') {
@@ -192,22 +194,28 @@ export default function Home() {
     };
     const verifyLine = () => {
         let line = 0;
+        let completedLines: number[] = [];
         while (line < cellPerColumn) {
             for (let i = 0; i < cellPerRow; i++) {
                 const iShape = board.current[line * cellPerRow + i];
                 // console.log(line * cellPerRow + i, iShape);
                 if (!iShape || (iShape && iShape.id === null)) break;
                 if (i === 9) {
-                    for (let j = 0; j < cellPerRow; j++) {
-                        board.current[line * cellPerRow + j] = defaultCell;
-                    }
-                    for (let j = cellPerColumn * cellPerRow; j > 0; j--) {
-                        board.current[j] = board.current[j - cellPerRow];
-                    }
-                    setScore(score + 1);
+                    completedLines.push(line);
                 }
             }
             line++;
+        }
+        if (completedLines.length > 0) {
+            for (let i = 0; i < completedLines.length; i++) {
+                for (let j = 0; j < cellPerRow; j++) {
+                    board.current[completedLines[i] * cellPerRow + j] = new BoardCell({id: null, color: 'transparent'});
+                }
+                for (let j = cellPerColumn * cellPerRow; j > 0; j--) {
+                    board.current[j] = board.current[j - cellPerRow];
+                }
+            }
+            setLines(lines + completedLines.length);
         }
     };
     useEffect(() => {
@@ -231,7 +239,7 @@ export default function Home() {
     useEffect(() => {
         if (!pause && currentPiece.current) {
             timeoutId.current = setTimeout(() => {
-                const hasCollision = verifyCollision();
+                const hasCollision = verifyColCollision();
                 if (hasCollision) {
                     verifyLine();
                     setTurn(turn + 1);
@@ -259,7 +267,7 @@ export default function Home() {
                 <h1 className={`${poppins.className} ${styles.pageTitle}`}>Tetris</h1>
                 <div className={styles.status}>
                     <div className={styles.score}>
-                        <p className={roboto.className}>Score: {score}</p>
+                        <p className={roboto.className}>Lines: {lines}</p>
                     </div>
                 </div>
                 <div className={styles.tetrisContainer}>
@@ -276,7 +284,7 @@ export default function Home() {
                     <div className={styles.buttons}>
                         <button className={`${roboto.className} ${styles.startButton}`}
                                 onClick={() => toggleGameSate()}>
-                            {pause ? (board.current.length === 0)?'Start':'Resume' : 'Pause'}
+                            {pause ? (board.current.length === 0) ? 'Start' : 'Resume' : 'Pause'}
                         </button>
                         <button className={`${roboto.className} ${styles.startButton}`}
                                 onClick={() => restartGame()}>
