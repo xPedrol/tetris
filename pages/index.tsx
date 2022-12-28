@@ -39,7 +39,7 @@ export default function Home() {
                 movePiece(e.key);
                 break;
         }
-    },[drawMove])
+    }, [drawMove]);
     const timeoutId = useRef<any | null>(null);
     const board = useRef<(TBoardCell | null)[]>([]);
     const [pause, setPause] = useState<boolean>(true);
@@ -53,8 +53,15 @@ export default function Home() {
         if (piece) {
             const prevIndex = piece.index;
             const move = (left: boolean) => {
-                if (left) piece.index--;
-                else piece.index++;
+                if (left) {
+                    if (!verifyLineCollision('left')) {
+                        piece.index--;
+                    }
+                } else {
+                    if (!verifyLineCollision('right')) {
+                        piece.index++;
+                    }
+                }
             };
             switch (direction) {
                 case 'ArrowLeft':
@@ -67,7 +74,7 @@ export default function Home() {
             board.current[prevIndex] = new BoardCell(defaultCell);
             drawShape(prevIndex);
             board.current[piece.index] = piece;
-            console.log('move',piece.index);
+            console.log('move', piece.index);
             drawShape(prevIndex, piece.color);
             setDrawMove(drawMove + 1);
             // clearTimeout(timeoutId.current);
@@ -93,7 +100,7 @@ export default function Home() {
     };
     const draw = () => {
         if (currentPiece.current) {
-            console.log('draw',currentPiece.current.index);
+            console.log('draw', currentPiece.current.index);
             const piece = currentPiece.current as Piece;
             const prevIndex = piece.index;
             if (piece.index === 0) {
@@ -144,6 +151,23 @@ export default function Home() {
             }
         }
         return collision;
+    };
+    const verifyLineCollision = (direction: 'left' | 'right'): boolean => {
+        const piece = currentPiece.current as Piece;
+        const hasCollision = (index: number) => {
+            if (direction === 'left') {
+                if (index % cellPerRow === 0) return true;
+            } else if (direction === 'right') {
+                if ((index + 1) % cellPerRow === 0) return true;
+            }
+            return false;
+        };
+        if (hasCollision(piece.index)) return true;
+        for (let i = 0; i < piece.shape.length; i++) {
+            const iShapeIndex = piece.index + piece.shape[i];
+            if (hasCollision(iShapeIndex)) return true;
+        }
+        return false;
     };
     useEffect(() => {
         board.current.length = cellDimensions.totalCells;
