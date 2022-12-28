@@ -198,12 +198,10 @@ export default function Home() {
                 // console.log(line * cellPerRow + i, iShape);
                 if (!iShape || (iShape && iShape.id === null)) break;
                 if (i === 9) {
-                    console.log('ai');
                     for (let j = 0; j < cellPerRow; j++) {
                         board.current[line * cellPerRow + j] = defaultCell;
                     }
-                    console.log(line * cellPerRow);
-                    for (let j = line * cellPerRow; j > 0; j--) {
+                    for (let j = cellPerColumn * cellPerRow; j > 0; j--) {
                         board.current[j] = board.current[j - cellPerRow];
                     }
                     setScore(score + 1);
