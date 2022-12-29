@@ -13,6 +13,7 @@ import JShape from "../models/pieces/JShape.model";
 import Bar from "../models/pieces/Bar.model";
 import {BoardCell, TBoardCell} from "../models/BoardCell.model";
 import useDimension from "../rooks/useDimension";
+import useAudio from "../rooks/useAudio";
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -25,6 +26,7 @@ const roboto = Roboto({
 
 
 export default function Home() {
+    const {start: startTheme, stop: stopTheme, playing,restart:restartTheme} = useAudio('/mainTheme.mp3');
     const currentPiece = useRef<Piece | null>(null);
     const {dimension: gridDimensions, cellDimension: cellDimensions, cellPerColumn, cellPerRow} = useDimension();
     const [drawBoard, setDrawBoard] = useState<number>(0);
@@ -48,7 +50,12 @@ export default function Home() {
     const [pause, setPause] = useState<boolean>(true);
     const [turn, setTurn] = useState<number>(0);
     const toggleGameSate = () => {
-        setPause(!pause);
+        setPause(state => !state);
+        if (pause) {
+            startTheme();
+        } else {
+            stopTheme();
+        }
     };
 
     const restartGame = () => {
@@ -59,6 +66,8 @@ export default function Home() {
         setDrawMove(0);
         setDrawBoard(0);
         currentPiece.current = null;
+        stopTheme();
+        restartTheme();
     };
     const movePiece = (direction: KeyboardEvent['key']) => {
         const piece = currentPiece.current;
