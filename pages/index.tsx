@@ -35,19 +35,6 @@ export default function Home() {
     const [drawBoard, setDrawBoard] = useState<number>(0);
     const [drawMove, setDrawMove] = useState<number>(0);
     const [lines, setLines] = useState<number>(0);
-    const keyDownHandler = useCallback((e: KeyboardEvent) => {
-        switch (e.key) {
-            case 'ArrowLeft':
-                movePiece(e.key);
-                break;
-            case 'ArrowRight':
-                movePiece(e.key);
-                break;
-            case 'ArrowDown':
-                movePiece(e.key);
-                break;
-        }
-    }, [drawMove]);
     const timeoutId = useRef<any | null>(null);
     const board = useRef<(TBoardCell | null)[]>([]);
     const [pause, setPause] = useState<boolean>(true);
@@ -94,14 +81,15 @@ export default function Home() {
                     break;
                 case 'ArrowDown':
                     if (!verifyColCollision()) {
-                        stopHMove();
-                        startHMove();
                         piece.index += cellPerRow;
                     }
             }
             if (prevIndex === piece.index) {
-                restartInvalid();
-                startInvalid();
+                if (direction !== 'ArrowDown') {
+                    restartInvalid();
+                    startInvalid();
+                }
+                return;
             }
             board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
             drawShape(prevIndex);
@@ -129,6 +117,7 @@ export default function Home() {
                 }
                 iShape.color = input;
                 board.current[iShapeIndex] = iShape;
+            }else{
             }
         }
     };
@@ -170,18 +159,20 @@ export default function Home() {
         }
     };
     const verifyColCollision = (): boolean => {
-        const piece = currentPiece.current as Piece;
         let collision = false;
-        if (piece.index + cellPerRow > cellDimensions.totalCells) return true;
-        const nextIndex = piece.index + cellPerRow;
-        const aShape = board.current[nextIndex];
-        if (aShape && typeof aShape.id === 'number' && aShape.id >= 0 && aShape.id !== piece.id) return true;
-        for (let i = 0; i < piece.shape.length; i++) {
-            const iShapeIndex = piece.index + piece.shape[i] + cellPerRow;
-            const iShape = board.current[iShapeIndex];
-            if (iShape && typeof iShape.id === 'number' && iShape.id >= 0 && iShape.id !== piece.id || (iShapeIndex >= cellDimensions.totalCells)) {
-                collision = true;
-                break;
+        if (currentPiece.current) {
+            const piece = currentPiece.current as Piece;
+            if (piece.index + cellPerRow > cellDimensions.totalCells) return true;
+            const nextIndex = piece.index + cellPerRow;
+            const aShape = board.current[nextIndex];
+            if (aShape && typeof aShape.id === 'number' && aShape.id >= 0 && aShape.id !== piece.id) return true;
+            for (let i = 0; i < piece.shape.length; i++) {
+                const iShapeIndex = piece.index + piece.shape[i] + cellPerRow;
+                const iShape = board.current[iShapeIndex];
+                if (iShape && typeof iShape.id === 'number' && iShape.id >= 0 && iShape.id !== piece.id || (iShapeIndex >= cellDimensions.totalCells)) {
+                    collision = true;
+                    break;
+                }
             }
         }
         return collision;
@@ -213,7 +204,6 @@ export default function Home() {
         while (line < cellPerColumn) {
             for (let i = 0; i < cellPerRow; i++) {
                 const iShape = board.current[line * cellPerRow + i];
-                // console.log(line * cellPerRow + i, iShape);
                 if (!iShape || (iShape && iShape.id === null)) break;
                 if (i === 9) {
                     completedLines.push(line);
@@ -239,12 +229,25 @@ export default function Home() {
         board.current.length = cellDimensions.totalCells;
     }, []);
     useEffect(() => {
+        const keyDownHandler = (e: KeyboardEvent) => {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    movePiece(e.key);
+                    break;
+                case 'ArrowRight':
+                    movePiece(e.key);
+                    break;
+                case 'ArrowDown':
+                    movePiece(e.key);
+                    break;
+            }
+        }
         document.addEventListener("keydown", keyDownHandler);
         // clean up
         return () => {
             document.removeEventListener("keydown", keyDownHandler);
         };
-    }, [keyDownHandler]);
+    }, [movePiece]);
 
 
     useEffect(() => {

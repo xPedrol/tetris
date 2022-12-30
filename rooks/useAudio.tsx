@@ -16,7 +16,6 @@ const useAudio = (url: string, props?: UseAudioProps) => {
         }
     };
     useEffect(() => {
-        console.log('useAudio: useEffect');
             if (audio) {
                 playing ? audio.play() : audio.pause();
             }
