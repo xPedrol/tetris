@@ -11,17 +11,31 @@ type CellProps = {
 const Cell = ({width, height, piece}: CellProps) => {
     const [className, setClassName] = useState(styles.cell);
     const background = useRef('transparent');
+    const opacity = useRef(1);
     useEffect(() => {
         if (typeof piece?.id === 'number') {
             setClassName(styles.cellPiece);
+            background.current = piece.color;
+            opacity.current = 1;
+            if (piece.ignore) {
+                opacity.current = 0.4;
+                background.current= 'gray';
+            }
         } else {
             setClassName(styles.cell);
+            background.current = 'transparent';
+            opacity.current = 1;
         }
-        background.current = piece?.color || 'transparent';
+
     });
     return (
         <div className={className}
-             style={{width: `${width}px`, height: `${height}px`, background: background.current}}>
+             style={{
+                 width: `${width}px`,
+                 height: `${height}px`,
+                 background: background.current,
+                 opacity: opacity.current
+             }}>
         </div>
     );
 };

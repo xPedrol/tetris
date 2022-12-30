@@ -6,7 +6,7 @@ class LShape extends Piece {
 
     constructor() {
         super('#8EC5FC', 'lshape');
-        this.shape = [cellPerRow, cellPerRow * 2, cellPerRow * 2 + 1];
+        this.shape = [-cellPerRow, cellPerRow, cellPerRow + 1];
     }
 }
 

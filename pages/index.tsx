@@ -14,6 +14,7 @@ import Bar from "../models/pieces/Bar.model";
 import {BoardCell, TBoardCell} from "../models/BoardCell.model";
 import useDimension from "../rooks/useDimension";
 import useAudio from "../rooks/useAudio";
+import {instanceOf} from "prop-types";
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -93,6 +94,9 @@ export default function Home() {
                         }
                     }
                     break;
+                case 'ArrowUp':
+                    piece.rotate();
+                    break;
             }
             if (prevIndex === piece.index) {
                 if (direction !== 'ArrowDown') {
@@ -101,6 +105,7 @@ export default function Home() {
                 }
                 return;
             }
+            drawSkeleton(prevIndex);
             board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
             drawShape(prevIndex);
             board.current[piece.index] = piece;
@@ -109,8 +114,8 @@ export default function Home() {
             // clearTimeout(timeoutId.current);
         }
     };
-    const drawShape = (prevIndex: number, input: any = null) => {
-        const piece = currentPiece.current as Piece;
+    const drawShape = (prevIndex: number, input?: string, piece?: Piece) => {
+        piece = piece ?? currentPiece.current as Piece;
         input = input ?? 'transparent';
         let index = input === 'transparent' ? prevIndex : piece.index;
         for (let i = 0; i < piece.shape.length; i++) {
@@ -126,9 +131,52 @@ export default function Home() {
                     iShape.id = null;
                 }
                 iShape.color = input;
+                if (piece && piece.ignore) {
+                    iShape.ignore = true;
+                }else{
+                    iShape.ignore = false;
+                }
                 board.current[iShapeIndex] = iShape;
             } else {
             }
+        }
+    };
+
+    const drawSkeleton = (prevIndex?: number) => {
+        if (currentPiece.current) {
+            prevIndex = prevIndex ?? currentPiece.current.index;
+            const pieceClone = Object.assign(Object.create(Object.getPrototypeOf(currentPiece.current)), currentPiece.current);
+            pieceClone.ignore = true;
+            while (true) {
+                if (!verifyColCollision(pieceClone)) {
+                    pieceClone.index += cellPerRow;
+                } else {
+                    break;
+                }
+            }
+            while (true) {
+                const iShape = board.current[prevIndex + cellPerRow];
+                if (!iShape || typeof iShape.id !== 'number' || (iShape && iShape.id === pieceClone.id)) {
+                    const nPiece = {...pieceClone};
+                    nPiece.index = prevIndex;
+                    if (!verifyColCollision(nPiece)) {
+                        prevIndex += cellPerRow;
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+                if (prevIndex + cellPerRow >= cellPerRow * cellPerColumn) {
+                    break;
+                }
+            }
+            board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent', ignore: true}));
+            drawShape(prevIndex);
+
+            board.current[pieceClone.index] = pieceClone;
+            drawShape(prevIndex, pieceClone.color, pieceClone);
+            // setDrawBoard(drawBoard + 1);
         }
     };
     const draw = () => {
@@ -168,10 +216,10 @@ export default function Home() {
                 return new Bar();
         }
     };
-    const verifyColCollision = (): boolean => {
+    const verifyColCollision = (piece?: Piece): boolean => {
         let collision = false;
         if (currentPiece.current) {
-            const piece = currentPiece.current as Piece;
+            piece = piece ?? currentPiece.current as Piece;
             if (piece.index + cellPerRow > cellDimensions.totalCells) return true;
             const nextIndex = piece.index + cellPerRow;
             const aShape = board.current[nextIndex];
@@ -226,7 +274,10 @@ export default function Home() {
             startLine();
             for (let i = 0; i < completedLines.length; i++) {
                 for (let j = 0; j < cellPerRow; j++) {
-                    board.current[completedLines[i] * cellPerRow + j] = new BoardCell({id: null, color: 'transparent'});
+                    board.current[completedLines[i] * cellPerRow + j] = new BoardCell({
+                        id: null,
+                        color: 'transparent'
+                    });
                 }
                 for (let j = cellPerColumn * cellPerRow; j > 0; j--) {
                     board.current[j] = board.current[j - cellPerRow];
@@ -241,7 +292,7 @@ export default function Home() {
     useEffect(() => {
         const keyDownHandler = (e: KeyboardEvent) => {
             const trustedCodes = ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Space'];
-            if (trustedCodes.includes(e.code)) {
+            if (trustedCodes.includes(e.code) && !pause) {
                 e.preventDefault();
                 movePiece(e.code);
             }
@@ -258,6 +309,7 @@ export default function Home() {
         if (!pause) {
             currentPiece.current = generatePiece() ?? null;
             draw();
+            drawSkeleton();
         }
     }, [turn]);
     useEffect(() => {
@@ -322,4 +374,4 @@ export default function Home() {
             </main>
         </>
     );
-}
+};

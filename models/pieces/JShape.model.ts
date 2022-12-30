@@ -6,7 +6,7 @@ class JShape extends Piece {
 
     constructor() {
         super('#92fcc2', 'jshape');
-        this.shape = [cellPerRow, cellPerRow * 2, cellPerRow * 2 - 1];
+        this.shape = [-cellPerRow, cellPerRow, cellPerRow  - 1];
     }
 }
 
