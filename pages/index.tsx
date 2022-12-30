@@ -26,7 +26,10 @@ const roboto = Roboto({
 
 
 export default function Home() {
-    const {start: startTheme, stop: stopTheme, playing,restart:restartTheme} = useAudio('/mainTheme.mp3');
+    const {start: startHMove, stop: stopHMove, restart: restartHMove} = useAudio('/hMove.mp3', {volume: 0.6});
+    const {start: startSolid, stop: stopSolid, restart: restartSolid} = useAudio('/solid.mp3', {volume: 0.6});
+    const {start: startInvalid, stop: stopInvalid, restart: restartInvalid} = useAudio('/invalid.wav', {volume: 0.1});
+    const {start: startLine, stop: stopLine, restart: restartLine} = useAudio('/line.wav', {volume: 0.5});
     const currentPiece = useRef<Piece | null>(null);
     const {dimension: gridDimensions, cellDimension: cellDimensions, cellPerColumn, cellPerRow} = useDimension();
     const [drawBoard, setDrawBoard] = useState<number>(0);
@@ -51,11 +54,6 @@ export default function Home() {
     const [turn, setTurn] = useState<number>(0);
     const toggleGameSate = () => {
         setPause(state => !state);
-        if (pause) {
-            startTheme();
-        } else {
-            stopTheme();
-        }
     };
 
     const restartGame = () => {
@@ -65,9 +63,8 @@ export default function Home() {
         setPause(true);
         setDrawMove(0);
         setDrawBoard(0);
+        timeoutId.current = null;
         currentPiece.current = null;
-        stopTheme();
-        restartTheme();
     };
     const movePiece = (direction: KeyboardEvent['key']) => {
         const piece = currentPiece.current;
@@ -76,10 +73,14 @@ export default function Home() {
             const move = (left: boolean) => {
                 if (left) {
                     if (!verifyRowCollision('left')) {
+                        restartHMove();
+                        startHMove();
                         piece.index--;
                     }
                 } else {
                     if (!verifyRowCollision('right')) {
+                        restartHMove();
+                        startHMove();
                         piece.index++;
                     }
                 }
@@ -93,8 +94,14 @@ export default function Home() {
                     break;
                 case 'ArrowDown':
                     if (!verifyColCollision()) {
+                        stopHMove();
+                        startHMove();
                         piece.index += cellPerRow;
                     }
+            }
+            if (prevIndex === piece.index) {
+                restartInvalid();
+                startInvalid();
             }
             board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
             drawShape(prevIndex);
@@ -200,7 +207,7 @@ export default function Home() {
         }
         return false;
     };
-    const verifyLine = () => {
+    const verifyCompletedLine = () => {
         let line = 0;
         let completedLines: number[] = [];
         while (line < cellPerColumn) {
@@ -215,6 +222,8 @@ export default function Home() {
             line++;
         }
         if (completedLines.length > 0) {
+            stopLine();
+            startLine();
             for (let i = 0; i < completedLines.length; i++) {
                 for (let j = 0; j < cellPerRow; j++) {
                     board.current[completedLines[i] * cellPerRow + j] = new BoardCell({id: null, color: 'transparent'});
@@ -249,7 +258,9 @@ export default function Home() {
             timeoutId.current = setTimeout(() => {
                 const hasCollision = verifyColCollision();
                 if (hasCollision) {
-                    verifyLine();
+                    restartSolid();
+                    startSolid();
+                    verifyCompletedLine();
                     setTurn(turn + 1);
                     clearTimeout(timeoutId.current);
                 } else {
