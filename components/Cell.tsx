@@ -1,5 +1,5 @@
 import styles from '../styles/Cell.module.scss';
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 import {Piece} from "../models/pieces/Piece.model";
 import {TBoardCell} from "../models/BoardCell.model";
 

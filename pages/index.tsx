@@ -109,7 +109,7 @@ export default function Home() {
                 return;
             }
             drawSkeleton(prevIndex);
-            board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
+            board.current[prevIndex] = new BoardCell(new BoardCell({id: null}));
             drawShape(prevIndex);
             board.current[piece.index] = piece;
             drawShape(prevIndex, piece);
@@ -117,7 +117,7 @@ export default function Home() {
             // clearTimeout(timeoutId.current);
         }
     };
-    const drawShape = (prevIndex: number, piece?: Piece) => {
+    const drawShape = (prevIndex: number, piece?: Piece,force?:boolean) => {
         let index = (!piece || !piece.classes) ? prevIndex : piece.index;
         piece = piece ?? currentPiece.current as Piece;
         for (let i = 0; i < piece.shape.length; i++) {
@@ -127,7 +127,7 @@ export default function Home() {
                 if (!iShape) {
                     iShape = new BoardCell();
                 }
-                if (index !== prevIndex) {
+                if (index !== prevIndex || force) {
                     iShape.id = piece.id;
                     iShape.classes = piece.classes;
                 } else {
@@ -173,11 +173,11 @@ export default function Home() {
                     break;
                 }
             }
-            board.current[prevIndex] = new BoardCell({id: null, color: 'transparent', ignore: true});
+            board.current[prevIndex] = new BoardCell({id: null, ignore: true});
             drawShape(prevIndex);
 
             board.current[pieceClone.index] = pieceClone;
-            drawShape(prevIndex, pieceClone);
+            drawShape(prevIndex, pieceClone,true);
             // setDrawBoard(drawBoard + 1);
         }
     };
