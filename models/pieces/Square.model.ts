@@ -5,7 +5,7 @@ class Square extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#FBDA61', 'square');
+        super('square');
         this.shape = [1, cellPerRow, cellPerRow + 1];
     }
 }

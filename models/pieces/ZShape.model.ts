@@ -5,8 +5,8 @@ class ZShape extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#16A085', 'zshape');
-        this.shape = [-cellPerRow-1, -cellPerRow, 1];
+        super('zShape');
+        this.shape = [-cellPerRow - 1, -cellPerRow, 1];
     }
 }
 

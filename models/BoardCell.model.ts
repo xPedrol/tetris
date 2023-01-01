@@ -1,20 +1,18 @@
 export type TBoardCell = {
     id: number | null;
-    color: string;
+    classes: string | null;
 
     ignore: boolean;
 }
 
 export class BoardCell implements TBoardCell {
     id: number | null;
-    color: string;
-    border: any;
-
+    classes: string | null;
     ignore: boolean;
 
     constructor(data: any = {}) {
         this.id = data.id ?? null;
-        this.color = data.color ?? 'transparent';
         this.ignore = data.ignore ?? false;
+        this.classes = null;
     }
 }

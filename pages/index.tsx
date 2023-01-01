@@ -4,7 +4,7 @@ import styles from '../styles/Home.module.scss';
 import Cell from "../components/Cell";
 import Square from "../models/pieces/Square.model";
 import {Piece} from "../models/pieces/Piece.model";
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Tee from "../models/pieces/Tee.model";
 import ZShape from "../models/pieces/ZShape.model";
 import SShape from "../models/pieces/SShape.model";
@@ -14,7 +14,6 @@ import Bar from "../models/pieces/Bar.model";
 import {BoardCell, TBoardCell} from "../models/BoardCell.model";
 import useDimension from "../rooks/useDimension";
 import useAudio from "../rooks/useAudio";
-import {instanceOf} from "prop-types";
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -45,13 +44,15 @@ export default function Home() {
     };
 
     const restartGame = () => {
+        if (timeoutId.current) {
+            clearTimeout(timeoutId.current);
+        }
         board.current = [];
         setLines(0);
         setTurn(0);
         setPause(true);
         setDrawMove(0);
         setDrawBoard(0);
-        timeoutId.current = null;
         currentPiece.current = null;
     };
     const movePiece = (direction: KeyboardEvent['key']) => {
@@ -82,6 +83,8 @@ export default function Home() {
                     break;
                 case 'ArrowDown':
                     if (!verifyColCollision()) {
+                        restartHMove();
+                        startHMove();
                         piece.index += cellPerRow;
                     }
                     break;
@@ -109,15 +112,14 @@ export default function Home() {
             board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
             drawShape(prevIndex);
             board.current[piece.index] = piece;
-            drawShape(prevIndex, piece.color);
+            drawShape(prevIndex, piece);
             setDrawMove(drawMove + 1);
             // clearTimeout(timeoutId.current);
         }
     };
-    const drawShape = (prevIndex: number, input?: string, piece?: Piece) => {
+    const drawShape = (prevIndex: number, piece?: Piece) => {
+        let index = (!piece || !piece.classes) ? prevIndex : piece.index;
         piece = piece ?? currentPiece.current as Piece;
-        input = input ?? 'transparent';
-        let index = input === 'transparent' ? prevIndex : piece.index;
         for (let i = 0; i < piece.shape.length; i++) {
             const iShapeIndex = index + piece.shape[i];
             if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
@@ -125,19 +127,19 @@ export default function Home() {
                 if (!iShape) {
                     iShape = new BoardCell();
                 }
-                if (input !== 'transparent') {
+                if (index !== prevIndex) {
                     iShape.id = piece.id;
+                    iShape.classes = piece.classes;
                 } else {
                     iShape.id = null;
+                    iShape.classes = null;
                 }
-                iShape.color = input;
                 if (piece && piece.ignore) {
                     iShape.ignore = true;
-                }else{
+                } else {
                     iShape.ignore = false;
                 }
                 board.current[iShapeIndex] = iShape;
-            } else {
             }
         }
     };
@@ -145,7 +147,7 @@ export default function Home() {
     const drawSkeleton = (prevIndex?: number) => {
         if (currentPiece.current) {
             prevIndex = prevIndex ?? currentPiece.current.index;
-            const pieceClone = Object.assign(Object.create(Object.getPrototypeOf(currentPiece.current)), currentPiece.current);
+            const pieceClone = JSON.parse(JSON.stringify(currentPiece.current));
             pieceClone.ignore = true;
             while (true) {
                 if (!verifyColCollision(pieceClone)) {
@@ -171,11 +173,11 @@ export default function Home() {
                     break;
                 }
             }
-            board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent', ignore: true}));
+            board.current[prevIndex] = new BoardCell({id: null, color: 'transparent', ignore: true});
             drawShape(prevIndex);
 
             board.current[pieceClone.index] = pieceClone;
-            drawShape(prevIndex, pieceClone.color, pieceClone);
+            drawShape(prevIndex, pieceClone);
             // setDrawBoard(drawBoard + 1);
         }
     };
@@ -188,10 +190,11 @@ export default function Home() {
             } else {
                 piece.index += cellPerRow;
             }
-            board.current[prevIndex] = new BoardCell(new BoardCell({id: null, color: 'transparent'}));
+            piece.ignore = false;
+            board.current[prevIndex] = new BoardCell({id: null, color: 'transparent', ignore: false});
             drawShape(prevIndex);
             board.current[piece.index] = piece;
-            drawShape(prevIndex, piece.color);
+            drawShape(prevIndex, piece);
             setDrawBoard(drawBoard + 1);
         }
     };
@@ -279,7 +282,7 @@ export default function Home() {
                         color: 'transparent'
                     });
                 }
-                for (let j = cellPerColumn * cellPerRow; j > 0; j--) {
+                for (let j = line * cellPerRow; j > 0; j--) {
                     board.current[j] = board.current[j - cellPerRow];
                 }
             }
@@ -355,6 +358,8 @@ export default function Home() {
                             Array.from(Array(cellDimensions.totalCells).keys()).map((index) => {
                                 return <Cell piece={board.current[index]} key={index}
                                              width={cellDimensions.width}
+                                             boardR={drawBoard}
+                                             moveR={drawMove}
                                              height={cellDimensions.height}/>;
                             })
                         }

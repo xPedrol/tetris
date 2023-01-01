@@ -5,7 +5,7 @@ class Bar extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('aqua', 'bar');
+        super( 'bar');
         this.shape = [-cellPerRow * 2, -cellPerRow, cellPerRow, cellPerRow * 2];
     }
 }

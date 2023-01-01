@@ -1,19 +1,27 @@
 import {cellPerRow} from "../../config/dimensions";
 
-export abstract class Piece {
-    color: string;
-    name: string;
+export type TPiece = {
+    classes: string;
     index: number;
     id: number;
     border: string;
-    ignore:boolean
+    ignore: boolean
+    shape: Array<number>;
+    rotate(): void;
+}
+
+export abstract class Piece implements TPiece {
+    classes: string;
+    index: number;
+    id: number;
+    border: string;
+    ignore: boolean;
     static ID = 0;
     abstract shape: Array<number>;
 
 
-    protected constructor(color: string, name: string) {
-        this.color = color;
-        this.name = name;
+    protected constructor(name: string) {
+        this.classes = name;
         this.index = 0;
         this.id = Piece.ID++;
         this.rotate();

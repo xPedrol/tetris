@@ -9,7 +9,45 @@
   justify-content: center;
 }
 
-.cellPiece{
+.pieceCell {
   @extend .cell;
-  box-shadow: black 0px 0px 0px 1px inset;
+  box-shadow: black 0 0 0 1px inset !important;
+}
+
+.emptyCell {
+  @extend .cell;
+  background-color: transparent !important;
+}
+
+.skeletonCell {
+  @extend .pieceCell;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bar {
+  background-color: aqua;
+}
+
+.jShape {
+  background-color: #92fcc2;
+}
+
+.lShape {
+  background-color: #8EC5FC;
+}
+
+.square {
+  background-color: #FBDA61;
+}
+
+.sShape {
+  background-color: #FBAB7E;
+}
+
+.tee {
+  background-color: #FF9A8B;
+}
+
+.zShape {
+  background-color: #16A085;
 }

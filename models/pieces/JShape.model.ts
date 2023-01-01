@@ -5,7 +5,7 @@ class JShape extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#92fcc2', 'jshape');
+        super('jShape');
         this.shape = [-cellPerRow, cellPerRow, cellPerRow  - 1];
     }
 }

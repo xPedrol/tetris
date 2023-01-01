@@ -5,7 +5,7 @@ class LShape extends Piece {
     readonly shape: Array<number>;
 
     constructor() {
-        super('#8EC5FC', 'lshape');
+        super('lShape');
         this.shape = [-cellPerRow, cellPerRow, cellPerRow + 1];
     }
 }
