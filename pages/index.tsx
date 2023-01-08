@@ -26,10 +26,10 @@ const roboto = Roboto({
 
 
 export default function Home() {
-    const {start: startHMove, stop: stopHMove, restart: restartHMove} = useAudio('/hMove.mp3', {volume: 0.6});
-    const {start: startSolid, stop: stopSolid, restart: restartSolid} = useAudio('/solid.mp3', {volume: 0.6});
-    const {start: startInvalid, stop: stopInvalid, restart: restartInvalid} = useAudio('/invalid.wav', {volume: 0.1});
-    const {start: startLine, stop: stopLine, restart: restartLine} = useAudio('/line.wav', {volume: 0.5});
+    const {start: starSFXMove, restart: restartSFXMove} = useAudio('/hMove.mp3', {volume: 0.6});
+    const {start: startSFXTurn, restart: restartSFXTurn} = useAudio('/solid.mp3', {volume: 0.6});
+    const {start: startSFXInvalidMove, restart: restartSFXInvalidMove} = useAudio('/invalid.wav', {volume: 0.1});
+    const {start: startSFXPoint, stop: stopSFXPoint} = useAudio('/line.wav', {volume: 0.5});
     const currentPiece = useRef<Piece | null>(null);
     const {dimension: gridDimensions, cellDimension: cellDimensions, cellPerColumn, cellPerRow} = useDimension();
     const [drawBoard, setDrawBoard] = useState<number>(0);
@@ -58,18 +58,18 @@ export default function Home() {
     const movePiece = (direction: KeyboardEvent['key']) => {
         const piece = currentPiece.current;
         if (piece) {
-            const prevIndex = piece.index;
+            piece.prevIndex = piece.index
             const move = (left: boolean) => {
                 if (left) {
                     if (!verifyRowCollision('left')) {
-                        restartHMove();
-                        startHMove();
+                        restartSFXMove();
+                        starSFXMove();
                         piece.index--;
                     }
                 } else {
                     if (!verifyRowCollision('right')) {
-                        restartHMove();
-                        startHMove();
+                        restartSFXMove();
+                        starSFXMove();
                         piece.index++;
                     }
                 }
@@ -83,8 +83,8 @@ export default function Home() {
                     break;
                 case 'ArrowDown':
                     if (!verifyColCollision()) {
-                        restartHMove();
-                        startHMove();
+                        restartSFXMove();
+                        starSFXMove();
                         piece.index += cellPerRow;
                     }
                     break;
@@ -99,87 +99,100 @@ export default function Home() {
                     break;
                 case 'ArrowUp':
                     piece.rotate();
+                    restartSFXMove();
+                    starSFXMove();
                     break;
             }
-            if (prevIndex === piece.index) {
-                if (direction !== 'ArrowDown') {
-                    restartInvalid();
-                    startInvalid();
+            if (piece.prevIndex === piece.index) {
+                if (direction !== 'ArrowDown' && direction !== 'ArrowUp') {
+                    restartSFXInvalidMove();
+                    startSFXInvalidMove();
                 }
                 return;
             }
-            drawSkeleton(prevIndex);
-            board.current[prevIndex] = new BoardCell(new BoardCell({id: null}));
-            drawShape(prevIndex);
+            drawSkeleton(piece.prevIndex);
+            board.current[piece.prevIndex] = new BoardCell(new BoardCell({id: null}));
+            removeShape(piece);
             board.current[piece.index] = piece;
-            drawShape(prevIndex, piece);
+            drawShape(piece);
             setDrawMove(drawMove + 1);
             // clearTimeout(timeoutId.current);
         }
     };
-    const drawShape = (prevIndex: number, piece?: Piece,force?:boolean) => {
-        let index = (!piece || !piece.classes) ? prevIndex : piece.index;
-        piece = piece ?? currentPiece.current as Piece;
+    const drawShape = (piece: Piece, force?: boolean) => {
         for (let i = 0; i < piece.shape.length; i++) {
-            const iShapeIndex = index + piece.shape[i];
+            const iShapeIndex = piece.index + piece.shape[i];
             if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
                 let iShape = board.current[iShapeIndex];
                 if (!iShape) {
                     iShape = new BoardCell();
                 }
-                if (index !== prevIndex || force) {
-                    iShape.id = piece.id;
-                    iShape.classes = piece.classes;
-                } else {
-                    iShape.id = null;
-                    iShape.classes = null;
-                }
-                if (piece && piece.ignore) {
-                    iShape.ignore = true;
-                } else {
-                    iShape.ignore = false;
-                }
+                iShape.id = piece.id;
+                iShape.classes = piece.classes;
+                iShape.ignore = piece && piece.ignore;
                 board.current[iShapeIndex] = iShape;
             }
         }
     };
 
-    const drawSkeleton = (prevIndex?: number) => {
-        if (currentPiece.current) {
-            prevIndex = prevIndex ?? currentPiece.current.index;
-            const pieceClone = JSON.parse(JSON.stringify(currentPiece.current));
-            pieceClone.ignore = true;
-            while (true) {
-                if (!verifyColCollision(pieceClone)) {
-                    pieceClone.index += cellPerRow;
-                } else {
-                    break;
+    const removeShape = (piece: Piece) => {
+        const prevIndex = piece.prevIndex;
+        for (let i = 0; i < piece.shape.length; i++) {
+            const iShapeIndex = prevIndex + piece.shape[i];
+            if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
+                let iShape = board.current[iShapeIndex] as BoardCell;
+                if (!iShape) {
+                    iShape = new BoardCell();
                 }
-            }
-            while (true) {
-                const iShape = board.current[prevIndex + cellPerRow];
-                if (!iShape || typeof iShape.id !== 'number' || (iShape && iShape.id === pieceClone.id)) {
-                    const nPiece = {...pieceClone};
-                    nPiece.index = prevIndex;
-                    if (!verifyColCollision(nPiece)) {
-                        prevIndex += cellPerRow;
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
-                if (prevIndex + cellPerRow >= cellPerRow * cellPerColumn) {
-                    break;
-                }
-            }
-            board.current[prevIndex] = new BoardCell({id: null, ignore: true});
-            drawShape(prevIndex);
+                iShape.id = null;
+                iShape.classes = null;
+                iShape.ignore = false;
+                board.current[iShapeIndex] = iShape;
 
-            board.current[pieceClone.index] = pieceClone;
-            drawShape(prevIndex, pieceClone,true);
-            // setDrawBoard(drawBoard + 1);
+            }
         }
+    };
+
+    const drawSkeleton = (prevIndex?: number) => {
+        // if (currentPiece.current) {
+        //     prevIndex = prevIndex ?? currentPiece.current.index;
+        //     const pieceClone = JSON.parse(JSON.stringify(currentPiece.current));
+        //     const mPiece = JSON.parse(JSON.stringify(currentPiece.current));
+        //     pieceClone.ignore = true;
+        //     while (true) {
+        //         if (!verifyColCollision(pieceClone)) {
+        //             pieceClone.index += cellPerRow;
+        //         } else {
+        //             break;
+        //         }
+        //     }
+        //     while (true) {
+        //         const iShape = board.current[prevIndex + cellPerRow];
+        //         if (!iShape || typeof iShape.id !== 'number' || (iShape && iShape.id === pieceClone.id)) {
+        //             const nPiece = {...pieceClone};
+        //             nPiece.index = prevIndex;
+        //             if (!verifyColCollision(nPiece)) {
+        //                 prevIndex += cellPerRow;
+        //             } else {
+        //                 break;
+        //             }
+        //         } else {
+        //             break;
+        //         }
+        //         if (prevIndex + cellPerRow >= cellPerRow * cellPerColumn) {
+        //             break;
+        //         }
+        //     }
+        //     board.current[prevIndex] = new BoardCell({id: null, ignore: false});
+        //     drawShape(prevIndex);
+        //
+        //
+        //     // if (currentPiece.current.index !== pieceClone.index) {
+        //     board.current[pieceClone.index] = pieceClone;
+        //     drawShape(prevIndex, pieceClone, true);
+        //     // }
+        //     // setDrawBoard(drawBoard + 1);
+        // }
     };
     const draw = () => {
         if (currentPiece.current) {
@@ -190,11 +203,12 @@ export default function Home() {
             } else {
                 piece.index += cellPerRow;
             }
+            piece.prevIndex = prevIndex;
             piece.ignore = false;
             board.current[prevIndex] = new BoardCell({id: null, color: 'transparent', ignore: false});
-            drawShape(prevIndex);
+            removeShape(piece);
             board.current[piece.index] = piece;
-            drawShape(prevIndex, piece);
+            drawShape(piece);
             setDrawBoard(drawBoard + 1);
         }
     };
@@ -273,8 +287,8 @@ export default function Home() {
             line++;
         }
         if (completedLines.length > 0) {
-            stopLine();
-            startLine();
+            stopSFXPoint();
+            startSFXPoint();
             for (let i = 0; i < completedLines.length; i++) {
                 for (let j = 0; j < cellPerRow; j++) {
                     board.current[completedLines[i] * cellPerRow + j] = new BoardCell({
@@ -301,7 +315,6 @@ export default function Home() {
             }
         };
         document.addEventListener("keydown", keyDownHandler);
-        // clean up
         return () => {
             document.removeEventListener("keydown", keyDownHandler);
         };
@@ -320,8 +333,8 @@ export default function Home() {
             timeoutId.current = setTimeout(() => {
                 const hasCollision = verifyColCollision();
                 if (hasCollision) {
-                    restartSolid();
-                    startSolid();
+                    restartSFXTurn();
+                    startSFXTurn();
                     verifyCompletedLine();
                     setTurn(turn + 1);
                     clearTimeout(timeoutId.current);

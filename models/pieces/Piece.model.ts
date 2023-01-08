@@ -3,6 +3,7 @@ import {cellPerRow} from "../../config/dimensions";
 export type TPiece = {
     classes: string;
     index: number;
+    prevIndex: number;
     id: number;
     border: string;
     ignore: boolean
@@ -14,19 +15,21 @@ export abstract class Piece implements TPiece {
     classes: string;
     index: number;
     id: number;
+    prevIndex: number;
     border: string;
     ignore: boolean;
     static ID = 0;
     abstract shape: Array<number>;
 
 
-    protected constructor(name: string) {
+    protected constructor(name: string, prevIndex?: number) {
         this.classes = name;
         this.index = 0;
         this.id = Piece.ID++;
         this.rotate();
         this.border = '1px solid white';
         this.ignore = false;
+        this.prevIndex = prevIndex ?? 0;
     }
 
     public rotate() {
@@ -34,9 +37,9 @@ export abstract class Piece implements TPiece {
             this.shape = this.shape.map((value, index) => {
                 if (Math.abs(value) === cellPerRow) {
                     if (value > 0) {
-                        return 1;
-                    } else {
                         return -1;
+                    } else {
+                        return 1;
                     }
                 } else {
                     if (value === 1) {
@@ -52,7 +55,7 @@ export abstract class Piece implements TPiece {
                         }
                     } else {
                         if (Math.abs(value) < cellPerRow) {
-                            return -cellPerRow + 1;
+                            return -cellPerRow - 1;
                         } else {
                             return cellPerRow + 1;
                         }
