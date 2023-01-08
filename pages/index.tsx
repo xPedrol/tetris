@@ -143,10 +143,12 @@ export default function Home() {
                 if (!iShape) {
                     iShape = new BoardCell();
                 }
-                iShape.id = null;
-                iShape.classes = null;
-                iShape.ignore = false;
-                board.current[iShapeIndex] = iShape;
+                if (iShapeIndex !== piece.prevIndex) {
+                    iShape.id = null;
+                    iShape.classes = null;
+                    iShape.ignore = false;
+                    board.current[iShapeIndex] = iShape;
+                }
             }
         }
     };
@@ -156,7 +158,7 @@ export default function Home() {
         piece.prevSkeletonIndex = piece.skeletonIndex;
         if (piece.skeletonIndex === -1) {
             piece.skeletonIndex = 4;
-        }else{
+        } else {
             piece.skeletonIndex = piece.index;
         }
         while (true) {
@@ -172,10 +174,14 @@ export default function Home() {
         if (currentPiece.current) {
             const piece = currentPiece.current;
             defineSkeleton();
-            board.current[piece.prevSkeletonIndex] = new BoardCell(new BoardCell({id: null}));
+            board.current[piece.prevSkeletonIndex] = new BoardCell({id: null});
             removeShape(piece, true);
-            board.current[piece.skeletonIndex] = new BoardCell({id: piece?.id, classes: null, ignore: true});
-            drawShape(piece, true);
+            if (piece.index !== piece.skeletonIndex) {
+                board.current[piece.skeletonIndex] = new BoardCell({id: piece?.id, classes: null, ignore: true});
+                drawShape(piece, true);
+            } else {
+                // console.log('drawSkeleton', piece.index, piece.skeletonIndex, piece.prevSkeletonIndex, piece);
+            }
         }
     };
     const draw = () => {
