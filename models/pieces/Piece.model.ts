@@ -4,6 +4,8 @@ export type TPiece = {
     classes: string;
     index: number;
     prevIndex: number;
+    skeletonIndex: number;
+    prevSkeletonIndex: number;
     id: number;
     border: string;
     ignore: boolean
@@ -16,13 +18,15 @@ export abstract class Piece implements TPiece {
     index: number;
     id: number;
     prevIndex: number;
+    skeletonIndex: number;
+    prevSkeletonIndex: number;
     border: string;
     ignore: boolean;
     static ID = 0;
     abstract shape: Array<number>;
 
 
-    protected constructor(name: string, prevIndex?: number) {
+    protected constructor(name: string, prevIndex?: number, skeletonIndex?: number) {
         this.classes = name;
         this.index = 0;
         this.id = Piece.ID++;
@@ -30,6 +34,8 @@ export abstract class Piece implements TPiece {
         this.border = '1px solid white';
         this.ignore = false;
         this.prevIndex = prevIndex ?? 0;
+        this.skeletonIndex = skeletonIndex ?? -1;
+        this.prevSkeletonIndex = skeletonIndex ?? -1;
     }
 
     public rotate() {
