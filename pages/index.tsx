@@ -30,6 +30,8 @@ export default function Home() {
     const {start: startSFXTurn, restart: restartSFXTurn} = useAudio('/solid.mp3', {volume: 0.6});
     const {start: startSFXInvalidMove, restart: restartSFXInvalidMove} = useAudio('/invalid.wav', {volume: 0.1});
     const {start: startSFXPoint, stop: stopSFXPoint} = useAudio('/line.wav', {volume: 0.5});
+    const [turnAnimation, setTurnAnimation] = useState('');
+    const [invalidMoveAnimation, setInvalidMoveAnimation] = useState('');
     const currentPiece = useRef<Piece | null>(null);
     const {dimension: gridDimensions, cellDimension: cellDimensions, cellPerColumn, cellPerRow} = useDimension();
     const [drawBoard, setDrawBoard] = useState<number>(0);
@@ -39,6 +41,18 @@ export default function Home() {
     const board = useRef<(TBoardCell | null)[]>([]);
     const [pause, setPause] = useState<boolean>(true);
     const [turn, setTurn] = useState<number>(0);
+    const startTurnAnimation = () => {
+        setTurnAnimation(styles.turnAnimation);
+    };
+    const stopTurnAnimation = () => {
+        setTurnAnimation('');
+    };
+    const startInvalidMoveAnimation = () => {
+        setTurnAnimation(styles.invalidMoveAnimation);
+    };
+    const stopInvalidMoveAnimation = () => {
+        setTurnAnimation('');
+    };
     const toggleGameSate = () => {
         setPause(state => !state);
     };
@@ -107,6 +121,7 @@ export default function Home() {
                 if (direction !== 'ArrowDown' && direction !== 'ArrowUp') {
                     restartSFXInvalidMove();
                     startSFXInvalidMove();
+                    startInvalidMoveAnimation();
                 }
                 return;
             }
@@ -318,6 +333,9 @@ export default function Home() {
             draw();
             drawSkeleton();
         }
+        if (turn > 1) {
+            startTurnAnimation();
+        }
     }, [turn]);
     useEffect(() => {
         if (!pause && currentPiece.current) {
@@ -355,8 +373,13 @@ export default function Home() {
                         <p className={roboto.className}>Lines: {lines}</p>
                     </div>
                 </div>
-                <div className={styles.tetrisContainer}>
-                    <div className={styles.tetrisGame}
+                <div className={`${styles.tetrisContainer} ${turnAnimation} ${invalidMoveAnimation}`}
+                     onAnimationEnd={()=>{
+                         stopTurnAnimation();
+                         stopInvalidMoveAnimation();
+                     }
+                     }>
+                    <div className={`${styles.tetrisGame}`}
                          style={{width: gridDimensions.width, height: gridDimensions.height}}>
                         {
                             Array.from(Array(cellDimensions.totalCells).keys()).map((index) => {

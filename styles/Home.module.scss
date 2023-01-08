@@ -78,3 +78,53 @@
 .cellBorder {
   border: 1px solid white !important;
 }
+
+.turnAnimation {
+  animation: turnAnimation 0.1s linear 1;
+}
+
+@keyframes turnAnimation {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(2.5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.invalidMoveAnimation {
+  animation: invalidMoveAnimation 0.1s linear 1;
+}
+
+@keyframes invalidMoveAnimation {
+  0% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(2.5px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+  0% {
+    transform: translateX(-2.5px);
+  }
+  50% {
+    transform: translateX(0px);
+  }
+  100% {
+    transform: translateX(2.5px);
+  }
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(-2.5px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
