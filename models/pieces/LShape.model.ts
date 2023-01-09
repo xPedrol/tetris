@@ -3,10 +3,16 @@ import {cellPerRow} from "../../config/dimensions";
 
 class LShape extends Piece {
     readonly shape: Array<number>;
+    readonly shapes: Array<Array<number>> = [
+        [-cellPerRow, cellPerRow, cellPerRow + 1],
+        [-1, 1, cellPerRow - 1],
+        [-cellPerRow, -cellPerRow - 1, cellPerRow],
+        [-cellPerRow + 1, 1, -1]
+    ];
 
     constructor() {
         super('lShape');
-        this.shape = [-cellPerRow, cellPerRow, cellPerRow + 1];
+        this.shape = this.shapes[0];
     }
 }
 

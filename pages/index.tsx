@@ -73,6 +73,7 @@ export default function Home() {
         const piece = currentPiece.current;
         if (piece) {
             piece.prevIndex = piece.index;
+            let rotate = false;
             const move = (left: boolean) => {
                 if (left) {
                     if (!verifyRowCollision('left')) {
@@ -113,8 +114,16 @@ export default function Home() {
                     break;
                 case 'ArrowUp':
                     piece.rotate();
-                    restartSFXMove();
-                    starSFXMove();
+                    if (verifyColCollision() || verifyRowCollision('left') || verifyRowCollision('right')) {
+                        piece.shape = piece.getPrevShape();
+                        piece.shapeIndex = piece.getPrevShapeIndex();
+                        restartSFXInvalidMove();
+                        startSFXInvalidMove();
+                    } else {
+                        restartSFXMove();
+                        starSFXMove();
+                        rotate = true;
+                    }
                     break;
             }
             if (piece.prevIndex === piece.index) {
@@ -123,11 +132,10 @@ export default function Home() {
                     startSFXInvalidMove();
                     startInvalidMoveAnimation();
                 }
-                return;
             }
-            drawSkeleton();
-            board.current[piece.prevIndex] = new BoardCell(new BoardCell({id: null}));
-            removeShape(piece);
+            drawSkeleton(rotate);
+            board.current[piece.prevIndex] = new BoardCell({id: null});
+            removeShape(piece, false, rotate);
             board.current[piece.index] = piece;
             drawShape(piece);
             setDrawMove(drawMove + 1);
@@ -150,9 +158,11 @@ export default function Home() {
         }
     };
 
-    const removeShape = (piece: Piece, isSkeleton: boolean = false) => {
+    const removeShape = (piece: Piece, isSkeleton: boolean = false, rotate: boolean = false) => {
         for (let i = 0; i < piece.shape.length; i++) {
-            const iShapeIndex = (isSkeleton ? piece.prevSkeletonIndex : piece.prevIndex) + piece.shape[i];
+            const pieceShapeIndex = rotate ? piece.getPrevShapeIndex() : piece.shapeIndex;
+            // console.log(piece,pieceShapeIndex);
+            const iShapeIndex = (isSkeleton ? piece.prevSkeletonIndex : piece.prevIndex) + piece.shapes[pieceShapeIndex][i];
             if (iShapeIndex >= 0 && iShapeIndex <= cellPerRow * cellPerColumn) {
                 let iShape = board.current[iShapeIndex] as BoardCell;
                 if (!iShape) {
@@ -185,12 +195,12 @@ export default function Home() {
         }
     };
 
-    const drawSkeleton = () => {
+    const drawSkeleton = (rotate: boolean = false) => {
         if (currentPiece.current) {
             const piece = currentPiece.current;
             defineSkeleton();
             board.current[piece.prevSkeletonIndex] = new BoardCell({id: null});
-            removeShape(piece, true);
+            removeShape(piece, true, rotate);
             if (piece.index !== piece.skeletonIndex) {
                 board.current[piece.skeletonIndex] = new BoardCell({id: piece?.id, classes: null, ignore: true});
                 drawShape(piece, true);
@@ -374,7 +384,7 @@ export default function Home() {
                     </div>
                 </div>
                 <div className={`${styles.tetrisContainer} ${turnAnimation} ${invalidMoveAnimation}`}
-                     onAnimationEnd={()=>{
+                     onAnimationEnd={() => {
                          stopTurnAnimation();
                          stopInvalidMoveAnimation();
                      }
